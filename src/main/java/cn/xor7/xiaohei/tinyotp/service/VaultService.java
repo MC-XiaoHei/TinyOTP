@@ -190,36 +190,53 @@ public final class VaultService {
         return isHelloAvailable() && Files.exists(keyPath);
     }
 
-    public void exportBackup(Path dest) throws Exception {
-        vaultFile.exportBackup(dest);
+    public void exportBackup(Path dest, char[] password) throws Exception {
+        VaultFile tmp = new VaultFile(dest);
+        tmp.create(password, exportData());
     }
 
-    public void importBackup(Path src) throws Exception {
-        byte[] masterKey = vaultFile.getCachedMasterKey();
-        if (masterKey == null) {
-            throw new IllegalStateException("Not unlocked");
-        }
-        try {
-            VaultFile backupFile = new VaultFile(src);
-            VaultData imported = backupFile.openWithMasterKey(masterKey);
-            sessionKey.initialize();
-            List<TotpEntry> valid = new ArrayList<>();
-            for (TotpEntry entry : imported.getEntries()) {
-                String s = entry.getSecret();
-                if (s != null && !s.isEmpty()) {
-                    byte[] rawKey = Base32.decode(s);
-                    byte[] blob = sessionKey.protect(rawKey);
-                    entry.setSecretBlob(blob);
-                    entry.setSecret(null);
-                    MemoryGuard.erase(rawKey);
-                    valid.add(entry);
-                }
+    public void importBackup(Path src, char[] password) throws Exception {
+        VaultFile tmp = new VaultFile(src);
+        VaultData imported = tmp.open(password);
+        sessionKey.initialize();
+        List<TotpEntry> valid = new ArrayList<>();
+        for (TotpEntry entry : imported.getEntries()) {
+            String s = entry.getSecret();
+            if (s != null && !s.isEmpty()) {
+                byte[] rawKey = Base32.decode(s);
+                byte[] blob = sessionKey.protect(rawKey);
+                entry.setSecretBlob(blob);
+                entry.setSecret(null);
+                MemoryGuard.erase(rawKey);
+                valid.add(entry);
             }
-            imported.getEntries().clear();
-            imported.getEntries().addAll(valid);
-            this.currentData = imported;
-        } finally {
-            MemoryGuard.erase(masterKey);
         }
+        imported.getEntries().clear();
+        imported.getEntries().addAll(valid);
+        this.currentData = imported;
+        save();
+        log.info("imported: {} entries", valid.size());
+    }
+
+    private VaultData exportData() {
+        List<TotpEntry> entries = new ArrayList<>();
+        for (TotpEntry entry : currentData.getEntries()) {
+            if (entry.getSecretBlob() == null) continue;
+            byte[] rawKey = sessionKey.expose(entry.getSecretBlob());
+            TotpEntry copy = new TotpEntry();
+            copy.setIssuer(entry.getIssuer());
+            copy.setAccount(entry.getAccount());
+            copy.setIconColor(entry.getIconColor());
+            copy.setSortOrder(entry.getSortOrder());
+            copy.setCreatedAt(entry.getCreatedAt());
+            copy.setUpdatedAt(System.currentTimeMillis());
+            copy.setSecret(Base32.encode(rawKey));
+            MemoryGuard.erase(rawKey);
+            entries.add(copy);
+        }
+        VaultData data = new VaultData();
+        data.setEntries(entries);
+        data.setConfig(currentData.getConfig());
+        return data;
     }
 }

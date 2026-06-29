@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.nio.file.Path;
 import java.time.Instant;
 import javax.swing.*;
 import javax.swing.Timer;
@@ -204,6 +205,53 @@ public final class MainPanel extends JPanel {
         }
     }
 
+    private char[] promptPassword(boolean confirm) {
+        JPasswordField pw1 = new JPasswordField(20);
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(4, 0, 4, 0);
+        c.gridx = 0;
+        c.anchor = GridBagConstraints.WEST;
+
+        panel.add(new JLabel(confirm ? "设置备份密码" : "输入备份密码"), c);
+        c.gridy = 1;
+        panel.add(pw1, c);
+
+        JPasswordField pw2 = null;
+        if (confirm) {
+            pw2 = new JPasswordField(20);
+            c.gridy = 2;
+            panel.add(new JLabel("再次输入密码"), c);
+            c.gridy = 3;
+            panel.add(pw2, c);
+        }
+
+        int ret = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            confirm ? "导出备份 - 设置密码" : "导入备份 - 输入密码",
+            JOptionPane.OK_CANCEL_OPTION
+        );
+        if (ret != JOptionPane.OK_OPTION) return null;
+
+        char[] p1 = pw1.getPassword();
+        if (p1.length == 0) {
+            JOptionPane.showMessageDialog(this, "密码不能为空");
+            return null;
+        }
+        if (confirm) {
+            char[] p2 = pw2.getPassword();
+            if (!java.util.Arrays.equals(p1, p2)) {
+                JOptionPane.showMessageDialog(this, "两次输入的密码不一致");
+                java.util.Arrays.fill(p1, '\0');
+                java.util.Arrays.fill(p2, '\0');
+                return null;
+            }
+            java.util.Arrays.fill(p2, '\0');
+        }
+        return p1;
+    }
+
     private void onExport() {
         JFileChooser ch = new JFileChooser();
         ch.setDialogTitle("导出备份");
@@ -214,14 +262,24 @@ public final class MainPanel extends JPanel {
             )
         );
         if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            char[] password = promptPassword(true);
+            if (password == null) return;
             try {
-                vault.exportBackup(ch.getSelectedFile().toPath());
+                Path selected = ch.getSelectedFile().toPath();
+                if (!selected.toString().endsWith(".tinyotp")) {
+                    selected = selected.resolveSibling(
+                        selected.getFileName() + ".tinyotp"
+                    );
+                }
+                vault.exportBackup(selected, password);
                 showToast("导出成功");
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(
                     this,
                     "导出失败: " + e.getMessage()
                 );
+            } finally {
+                java.util.Arrays.fill(password, '\0');
             }
         }
     }
@@ -236,8 +294,10 @@ public final class MainPanel extends JPanel {
             )
         );
         if (ch.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            char[] password = promptPassword(false);
+            if (password == null) return;
             try {
-                vault.importBackup(ch.getSelectedFile().toPath());
+                vault.importBackup(ch.getSelectedFile().toPath(), password);
                 refreshList();
                 showToast("导入成功");
             } catch (Exception e) {
@@ -245,6 +305,8 @@ public final class MainPanel extends JPanel {
                     this,
                     "导入失败: " + e.getMessage()
                 );
+            } finally {
+                java.util.Arrays.fill(password, '\0');
             }
         }
     }
