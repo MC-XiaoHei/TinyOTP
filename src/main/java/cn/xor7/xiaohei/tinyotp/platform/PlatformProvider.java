@@ -44,18 +44,6 @@ public final class PlatformProvider {
         }
     }
 
-    public static boolean isHelloAvailable() {
-        if (!IS_WINDOWS) return false;
-        try {
-            boolean avail = JHello.available();
-            log.info("JHello.available() = {}", avail);
-            return avail;
-        } catch (Exception e) {
-            log.warn("JHello.available() exception", e);
-            return false;
-        }
-    }
-
     public static void refreshHwnd() {
         String title = "TinyOTP";
         try {

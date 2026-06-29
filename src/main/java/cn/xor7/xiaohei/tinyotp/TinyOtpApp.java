@@ -41,6 +41,8 @@ public final class TinyOtpApp {
         frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         frame.setResizable(false);
 
+        new TrayIconManager(this::showWindow, this::exitApp).addToTray();
+
         if (vault.isFirstTime()) {
             showSetupView();
         } else {
@@ -76,7 +78,6 @@ public final class TinyOtpApp {
         show(mainPanel);
         mainPanel.refreshList();
         mainPanel.startTimer();
-        new TrayIconManager(this::showWindow, this::exitApp).addToTray();
     }
 
     public void showAddEntryDialog() {

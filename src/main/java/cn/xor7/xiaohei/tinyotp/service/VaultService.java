@@ -182,14 +182,6 @@ public final class VaultService {
         vaultFile.persist(data);
     }
 
-    public boolean isHelloAvailable() {
-        return PlatformProvider.isHelloAvailable();
-    }
-
-    public boolean isHelloConfigured() {
-        return isHelloAvailable() && Files.exists(keyPath);
-    }
-
     public void exportBackup(Path dest, char[] password) throws Exception {
         VaultFile tmp = new VaultFile(dest);
         tmp.create(password, exportData());

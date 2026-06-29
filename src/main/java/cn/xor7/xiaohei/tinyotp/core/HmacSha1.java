@@ -1,13 +1,13 @@
 package cn.xor7.xiaohei.tinyotp.core;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public final class HmacSha1 {
+
     private static final String ALGORITHM = "HmacSHA1";
-    private static final int OUTPUT_LENGTH = 20;
 
     private HmacSha1() {}
 

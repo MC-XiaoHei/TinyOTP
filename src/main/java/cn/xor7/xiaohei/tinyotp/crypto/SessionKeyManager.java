@@ -73,17 +73,4 @@ public final class SessionKeyManager {
         active = false;
         log.debug("session key destroyed");
     }
-
-    public SessionKeyManager snapshot() {
-        if (!active) {
-            throw new IllegalStateException(
-                "Cannot snapshot inactive session key"
-            );
-        }
-        SessionKeyManager copy = new SessionKeyManager();
-        copy.sessionKey = this.sessionKey.clone();
-        copy.active = true;
-        log.debug("session key snapshot created");
-        return copy;
-    }
 }

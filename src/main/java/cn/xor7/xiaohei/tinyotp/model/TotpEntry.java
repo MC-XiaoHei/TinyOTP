@@ -113,11 +113,4 @@ public final class TotpEntry {
     public void setCurrentCode(String currentCode) {
         this.currentCode = currentCode;
     }
-
-    public String displayLabel() {
-        if (account != null && !account.isEmpty()) {
-            return issuer + " (" + account + ")";
-        }
-        return issuer;
-    }
 }
