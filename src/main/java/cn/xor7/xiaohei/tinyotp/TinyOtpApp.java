@@ -53,7 +53,6 @@ public final class TinyOtpApp {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        // cache native HWND right after window appears (needed by JHello)
         PlatformProvider.cacheHwnd(frame);
     }
 
@@ -77,12 +76,8 @@ public final class TinyOtpApp {
         show(mainPanel);
         mainPanel.refreshList();
         mainPanel.startTimer();
-
-        // tray icon after unlock
         new TrayIconManager(this::showWindow, this::exitApp).addToTray();
     }
-
-    // ── Dialogs ──
 
     public void showAddEntryDialog() {
         showAddEntryDialog(null);
@@ -94,11 +89,8 @@ public final class TinyOtpApp {
         if (mainPanel != null) mainPanel.refreshList();
     }
 
-    // ── QR Scan ──
-
     public void startScanQr() {
         frame.setVisible(false);
-        // small delay so the window actually disappears before screenshot
         javax.swing.Timer timer = new javax.swing.Timer(300, ev -> {
             new ScreenRegionSelector(this::handleScanResult, () ->
                 frame.setVisible(true)
@@ -163,8 +155,6 @@ public final class TinyOtpApp {
         if (mainPanel != null) mainPanel.refreshList();
     }
 
-    // ── Tray ──
-
     private void showWindow() {
         SwingUtilities.invokeLater(() -> {
             if (frame.isVisible()) {
@@ -183,8 +173,6 @@ public final class TinyOtpApp {
         if (mainPanel != null) mainPanel.stopTimer();
         System.exit(0);
     }
-
-    // ── Entry point ──
 
     public static void main(String[] args) {
         FlatLightLaf.setup();

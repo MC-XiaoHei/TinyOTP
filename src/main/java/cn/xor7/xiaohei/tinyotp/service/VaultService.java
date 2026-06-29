@@ -45,51 +45,34 @@ public final class VaultService {
         return sessionKey.isActive();
     }
 
-    // ── Hello verify (must call on FX thread) ──
-
     public boolean verifyWithHello() {
         return PlatformProvider.verifyHello("TinyOTP");
     }
 
-    // ── Setup (call verifyWithHello on FX thread first) ──
-
     public void createAndEnableHello() throws Exception {
-        log.info("createAndEnableHello: start");
-        // clean old vault if present
+        log.info("createAndEnableHello");
         if (vaultFile.exists()) {
             log.info("deleting old vault");
             Files.delete(vaultPath);
         }
 
-        // generate random Argon2id password
         byte[] randomBytes = SecureRandomGenerator.generateBytes(32);
         String randomPassword = Base64.getEncoder().encodeToString(randomBytes);
         MemoryGuard.erase(randomBytes);
-        log.info("random password generated");
-
-        // DPAPI-protect the password and save to .key file
         byte[] encrypted = PlatformProvider.dpapiProtect(
             randomPassword.getBytes(StandardCharsets.UTF_8)
         );
         Files.createDirectories(keyPath.getParent());
         Files.write(keyPath, encrypted);
         log.info("key file written to {}", keyPath);
-
-        // create vault
         char[] pwdChars = randomPassword.toCharArray();
         currentData = new VaultData();
         currentData.setConfig(new VaultConfig());
         vaultFile.create(pwdChars, currentData);
-        log.info("vault file created");
-
-        // unlock (sets cachedMasterKey)
         unlock(pwdChars);
         MemoryGuard.erase(pwdChars);
-
-        log.info("vault created with Hello (key={})", keyPath);
+        log.info("vault created (key={})", keyPath);
     }
-
-    // ── Unlock (call verifyWithHello on FX thread first) ──
 
     public void unlock(char[] password) throws Exception {
         VaultData loaded = vaultFile.open(password);
@@ -113,26 +96,21 @@ public final class VaultService {
     }
 
     public void unlockWithHello() throws Exception {
-        log.info("unlockWithHello: start");
+        log.info("unlockWithHello");
         if (!Files.exists(keyPath)) {
             log.warn("key file not found: {}", keyPath);
             throw new IllegalStateException("Key file not found at " + keyPath);
         }
 
-        // DPAPI decrypt the random password from .key file
         byte[] encrypted = Files.readAllBytes(keyPath);
         byte[] plainPwd = PlatformProvider.dpapiUnprotect(encrypted);
         String randomPassword = new String(plainPwd, StandardCharsets.UTF_8);
         MemoryGuard.erase(plainPwd);
-        log.info("password recovered from key file");
-
         unlock(randomPassword.toCharArray());
         MemoryGuard.erase(randomPassword.toCharArray());
 
-        log.info("hello unlock: {} entries", currentData.getEntries().size());
+        log.info("unlock: {} entries", currentData.getEntries().size());
     }
-
-    // ── CRUD ──
 
     public List<TotpEntry> getEntries() {
         return currentData != null ? currentData.getEntries() : List.of();
@@ -182,8 +160,6 @@ public final class VaultService {
         }
     }
 
-    // ── Persist ──
-
     private void save() throws Exception {
         List<TotpEntry> storage = new ArrayList<>();
         for (TotpEntry entry : currentData.getEntries()) {
@@ -206,8 +182,6 @@ public final class VaultService {
         vaultFile.persist(data);
     }
 
-    // ── Windows Hello availability ──
-
     public boolean isHelloAvailable() {
         return PlatformProvider.isHelloAvailable();
     }
@@ -215,8 +189,6 @@ public final class VaultService {
     public boolean isHelloConfigured() {
         return isHelloAvailable() && Files.exists(keyPath);
     }
-
-    // ── Backup ──
 
     public void exportBackup(Path dest) throws Exception {
         vaultFile.exportBackup(dest);

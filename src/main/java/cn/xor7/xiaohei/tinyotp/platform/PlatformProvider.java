@@ -27,15 +27,10 @@ public final class PlatformProvider {
 
     private static volatile HWND cachedHwnd;
 
-    /**
-     * Store the native HWND of the main window so JHello can use it as parent.
-     * Call this after the window is visible.
-     */
     public static void cacheHwnd(Frame frame) {
         try {
             HWND hwnd = User32.INSTANCE.FindWindow(null, frame.getTitle());
             if (hwnd == null) {
-                // Fallback: search by process
                 log.warn(
                     "FindWindow returned null for title '{}'",
                     frame.getTitle()
@@ -49,8 +44,6 @@ public final class PlatformProvider {
         }
     }
 
-    // ── Windows Hello ──
-
     public static boolean isHelloAvailable() {
         if (!IS_WINDOWS) return false;
         try {
@@ -63,22 +56,15 @@ public final class PlatformProvider {
         }
     }
 
-    /**
-     * Re-fetch the native HWND of the main window.
-     * Call this right before JHello.verify to ensure a valid parent handle.
-     */
     public static void refreshHwnd() {
         String title = "TinyOTP";
         try {
             HWND hwnd = User32.INSTANCE.FindWindow(null, title);
             if (hwnd != null) {
                 cachedHwnd = hwnd;
-                log.info("refreshHwnd: cached HWND for '{}' = {}", title, hwnd);
+                log.info("cached HWND for '{}' = {}", title, hwnd);
             } else {
-                log.warn(
-                    "refreshHwnd: FindWindow returned null for '{}'",
-                    title
-                );
+                log.warn("FindWindow returned null for '{}'", title);
             }
         } catch (Exception e) {
             log.warn("refreshHwnd failed", e);
@@ -87,28 +73,22 @@ public final class PlatformProvider {
 
     public static boolean verifyHello(String message) {
         if (!IS_WINDOWS) {
-            log.warn("verifyHello: not Windows");
+            log.warn("not Windows");
             return false;
         }
 
-        // Ensure we have a valid parent HWND so the Hello dialog
-        // is correctly owned and appears in front of the main window.
         HWND parentHwnd = cachedHwnd;
         if (parentHwnd == null) {
-            log.warn("verifyHello: cachedHwnd is null, attempting refresh");
+            log.warn("cachedHwnd is null, attempting refresh");
             refreshHwnd();
             parentHwnd = cachedHwnd;
         }
         if (parentHwnd == null) {
-            // Last resort: use the current foreground window
             parentHwnd = User32.INSTANCE.GetForegroundWindow();
-            log.warn(
-                "verifyHello: using GetForegroundWindow as parent = {}",
-                parentHwnd
-            );
+            log.warn("using GetForegroundWindow as parent = {}", parentHwnd);
         }
 
-        log.info("calling JHello.verify(\"{}\", hwnd={})", message, parentHwnd);
+        log.info("JHello.verify hwnd={}", parentHwnd);
         try {
             UserConsentVerificationResult result = JHello.verify(
                 message,
@@ -121,8 +101,6 @@ public final class PlatformProvider {
             return false;
         }
     }
-
-    // ── DPAPI ──
 
     public static byte[] dpapiProtect(byte[] data) {
         if (!IS_WINDOWS) throw new UnsupportedOperationException(

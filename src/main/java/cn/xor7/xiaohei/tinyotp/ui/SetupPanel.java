@@ -30,7 +30,10 @@ public final class SetupPanel extends JPanel {
         c.gridy = 0;
         add(title, c);
 
-        JLabel prompt = new JLabel("首次使用，请设置 Windows Hello 认证", SwingConstants.CENTER);
+        JLabel prompt = new JLabel(
+            "首次使用，请设置 Windows Hello 认证",
+            SwingConstants.CENTER
+        );
         prompt.setFont(prompt.getFont().deriveFont(13f));
         prompt.setForeground(Color.DARK_GRAY);
         c.gridy = 1;
@@ -48,7 +51,7 @@ public final class SetupPanel extends JPanel {
     private void onSetup(JButton btn) {
         btn.setEnabled(false);
         btn.setText("正在验证...");
-        log.info("=== onSetup ===");
+        log.info("onSetup");
 
         try {
             if (!vault.verifyWithHello()) {

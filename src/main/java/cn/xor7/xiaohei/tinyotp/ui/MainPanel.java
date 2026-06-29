@@ -22,7 +22,6 @@ public final class MainPanel extends JPanel {
     private final JList<TotpEntry> entryList = new JList<>(listModel);
     private final JLabel countdownLabel = new JLabel("", SwingConstants.CENTER);
 
-    // Toast shown at bottom-center
     private final JLabel toastLabel = new JLabel("", SwingConstants.CENTER);
     private final Timer toastTimer = new Timer(1000, e -> {
         JPanel parent = (JPanel) toastLabel.getParent();
@@ -41,7 +40,6 @@ public final class MainPanel extends JPanel {
 
         toastTimer.setRepeats(false);
 
-        // ── Toolbar ──
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
 
@@ -72,8 +70,6 @@ public final class MainPanel extends JPanel {
         toolbar.add(Box.createHorizontalGlue());
         toolbar.add(backupBtn);
         add(toolbar, BorderLayout.NORTH);
-
-        // ── Entry list ──
         entryList.setCellRenderer(new TotpEntryRenderer());
         entryList.setSelectionBackground(new Color(0xD1, 0xE0, 0xF7));
         entryList.setSelectionForeground(Color.BLACK);
@@ -107,22 +103,16 @@ public final class MainPanel extends JPanel {
         );
         JScrollPane scrollPane = new JScrollPane(entryList);
         add(scrollPane, BorderLayout.CENTER);
-
-        // ── Bottom bar: countdown + toast (layered) ──
         countdownLabel.setFont(countdownLabel.getFont().deriveFont(13f));
         countdownLabel.setBorder(BorderFactory.createEmptyBorder(6, 0, 6, 0));
 
         toastLabel.setFont(toastLabel.getFont().deriveFont(13f));
         toastLabel.setForeground(new Color(0x33, 0x33, 0x33));
         toastLabel.setVisible(false);
-
-        // bottom: countdown (always visible) + toast (appears on top)
         JPanel bottomPanel = new JPanel(new CardLayout());
         bottomPanel.add(countdownLabel, "countdown");
         bottomPanel.add(toastLabel, "toast");
         add(bottomPanel, BorderLayout.SOUTH);
-
-        // ── Actions ──
         manualItem.addActionListener(e -> {
             if (onAddEntry != null) onAddEntry.run();
         });
@@ -151,8 +141,6 @@ public final class MainPanel extends JPanel {
 
     private void refreshAll() {
         long now = Instant.now().getEpochSecond();
-
-        // 1. Update codes
         for (int i = 0; i < listModel.size(); i++) {
             TotpEntry entry = listModel.get(i);
             if (entry != null) {
@@ -164,8 +152,6 @@ public final class MainPanel extends JPanel {
                 listModel.set(i, entry);
             }
         }
-
-        // 2. Countdown
         long remaining = 30 - (now % 30);
         String color;
         if (remaining > 10) color = "#4caf50";

@@ -51,8 +51,6 @@ public final class TotpEntryRenderer
 
         String code = entry.getCurrentCode();
         codeLabel.setText(code != null ? code : "");
-
-        // Color by remaining time
         long now = Instant.now().getEpochSecond();
         long remaining = 30 - (now % 30);
 
@@ -66,8 +64,6 @@ public final class TotpEntryRenderer
         }
 
         codeLabel.setForeground(Color.decode(htmlColor));
-
-        // Selection highlight
         if (isSelected) {
             setBackground(list.getSelectionBackground());
             setForeground(list.getSelectionForeground());

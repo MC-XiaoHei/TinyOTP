@@ -56,22 +56,17 @@ public final class UnlockPanel extends JPanel {
     private void onHello(JButton btn) {
         btn.setEnabled(false);
         btn.setText("正在验证...");
-        log.info("=== onHello ===");
+        log.info("onHello");
 
-        // 1) 确保 cachedHwnd 有效（不要调用 toFront，否则会干扰 Windows 模态对话框的 Z-order）
         PlatformProvider.refreshHwnd();
-
-        // 2) 后台执行 JHello.verify + unlockWithHello，避免阻塞 EDT
-        //    （JHello.verify 会传入父窗口 HWND，Windows 原生模态机制会自动
-        //     将 Hello 对话框显示在主窗口之上）
         CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(
             () -> {
                 try {
-                    log.info("starting JHello.verify on worker thread");
+                    log.info("verify");
                     boolean verified = vault.verifyWithHello();
                     if (!verified) return false;
 
-                    log.info("verify passed, starting unlock on worker thread");
+                    log.info("verified, unlock");
                     vault.unlockWithHello();
                     return true;
                 } catch (Exception ex) {
@@ -80,11 +75,7 @@ public final class UnlockPanel extends JPanel {
                 }
             }
         );
-
-        // 3) 超时保护
         future = future.orTimeout(HELLO_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
-        // 4) 回到 EDT 处理结果
         future.whenCompleteAsync((success, ex) -> {
             if (ex != null) {
                 Throwable cause =
@@ -95,7 +86,7 @@ public final class UnlockPanel extends JPanel {
                     cause instanceof CancellationException ||
                     cause instanceof java.util.concurrent.TimeoutException
                 ) {
-                    log.warn("hello verify timed out or cancelled");
+                    log.warn("verify timed out");
                     JOptionPane.showMessageDialog(this, "验证超时，请重试");
                 } else {
                     log.error("unlock failed", cause);

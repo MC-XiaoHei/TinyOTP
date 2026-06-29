@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 
 public final class AddEntryDialog extends JDialog {
 
-    private static final Logger log = LoggerFactory.getLogger(AddEntryDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(
+        AddEntryDialog.class
+    );
 
     private final VaultService vault;
     private final TotpEntry editing;
@@ -29,14 +31,11 @@ public final class AddEntryDialog extends JDialog {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
 
-        // ── Title ──
         JLabel title = new JLabel(editing == null ? "添加条目" : "编辑条目");
         title.setFont(title.getFont().deriveFont(18f));
         c.gridy = 0;
         c.insets = new Insets(12, 20, 8, 20);
         add(title, c);
-
-        // ── Form ──
         JPanel form = new JPanel(new GridBagLayout());
         GridBagConstraints fc = new GridBagConstraints();
         fc.insets = new Insets(3, 0, 3, 0);
@@ -73,8 +72,6 @@ public final class AddEntryDialog extends JDialog {
         c.gridy = 1;
         c.insets = new Insets(4, 20, 4, 20);
         add(form, c);
-
-        // ── Buttons ──
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancelBtn = new JButton("取消");
         JButton saveBtn = new JButton("保存");
