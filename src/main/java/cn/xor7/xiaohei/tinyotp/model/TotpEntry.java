@@ -39,6 +39,10 @@ public final class TotpEntry {
         this.issuer = issuer;
     }
 
+    public String displayIssuer() {
+        return issuer != null && !issuer.isEmpty() ? issuer : "Unknown";
+    }
+
     public String getAccount() {
         return account;
     }

@@ -141,7 +141,11 @@ public final class TinyOtpApp {
             e.setSecret(otp.getSecret());
             vault.addEntry(e);
 
-            JOptionPane.showMessageDialog(frame, "已添加 " + otp.getIssuer());
+            String iss = otp.getIssuer();
+            JOptionPane.showMessageDialog(
+                frame,
+                "已添加 " + (iss != null && !iss.isEmpty() ? iss : "Unknown")
+            );
         } catch (com.google.zxing.NotFoundException ex) {
             JOptionPane.showMessageDialog(frame, "未识别到二维码");
         } catch (IllegalArgumentException ex) {

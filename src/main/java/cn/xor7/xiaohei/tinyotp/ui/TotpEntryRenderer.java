@@ -44,7 +44,7 @@ public final class TotpEntryRenderer
     ) {
         if (entry == null) return this;
 
-        issuerLabel.setText(entry.getIssuer());
+        issuerLabel.setText(entry.displayIssuer());
         accountLabel.setText(
             entry.getAccount() != null ? entry.getAccount() : ""
         );

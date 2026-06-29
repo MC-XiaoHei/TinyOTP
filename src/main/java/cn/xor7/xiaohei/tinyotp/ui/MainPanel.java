@@ -201,7 +201,7 @@ public final class MainPanel extends JPanel {
         if (sel == null) return;
         int r = JOptionPane.showConfirmDialog(
             this,
-            "确认删除 " + sel.getIssuer() + " 的条目？",
+            "确认删除 " + sel.displayIssuer() + " 的条目？",
             "确认",
             JOptionPane.YES_NO_OPTION
         );
