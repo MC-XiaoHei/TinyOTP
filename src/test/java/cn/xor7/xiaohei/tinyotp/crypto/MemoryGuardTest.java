@@ -118,23 +118,4 @@ class MemoryGuardTest {
             )
         );
     }
-
-    @Test
-    void eraseThenNull_should_zero_all_elements() {
-        byte[] data = { 10, 20, 30 };
-        MemoryGuard.eraseThenNull(data);
-        for (byte b : data) {
-            assertEquals((byte) 0, b);
-        }
-    }
-
-    @Test
-    void eraseThenNull_should_handle_null() {
-        MemoryGuard.eraseThenNull(null);
-    }
-
-    @Test
-    void eraseThenNull_should_handle_empty_array() {
-        MemoryGuard.eraseThenNull(new byte[0]);
-    }
 }

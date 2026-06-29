@@ -2,6 +2,7 @@ package cn.xor7.xiaohei.tinyotp.storage;
 
 import cn.xor7.xiaohei.tinyotp.crypto.*;
 import cn.xor7.xiaohei.tinyotp.model.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -28,7 +29,9 @@ public final class VaultFile {
 
     public VaultFile(Path filePath) {
         this.filePath = filePath;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper().disable(
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+        );
     }
 
     public boolean exists() {
@@ -79,21 +82,6 @@ public final class VaultFile {
         }
     }
 
-    public VaultData openWithMasterKey(byte[] masterKey) throws Exception {
-        readHeader();
-        this.cachedMasterKey = masterKey.clone();
-        return decryptWithMasterKey(masterKey);
-    }
-
-    public byte[] deriveMasterKey(char[] password) {
-        if (cachedSalt == null) {
-            throw new IllegalStateException(
-                "Vault not opened yet, no cached salt available"
-            );
-        }
-        return MasterKeyDeriver.deriveKey(password, cachedSalt);
-    }
-
     public void saveWithMasterKey(byte[] masterKey, VaultData data)
         throws Exception {
         byte[] payload = objectMapper.writeValueAsBytes(data);
@@ -132,10 +120,6 @@ public final class VaultFile {
         this.cachedIterations = iterations;
         this.cachedParallelism = parallelism;
         return salt;
-    }
-
-    private void readHeader() throws Exception {
-        readSalt();
     }
 
     private VaultData decryptWithMasterKey(byte[] masterKey) throws Exception {
@@ -186,18 +170,6 @@ public final class VaultFile {
         log.info("vault persisted to {}", filePath);
     }
 
-    public byte[] getCachedMasterKey() {
-        if (cachedMasterKey == null) return null;
-        return cachedMasterKey.clone();
-    }
-
-    public void clearCachedMasterKey() {
-        if (cachedMasterKey != null) {
-            MemoryGuard.erase(cachedMasterKey);
-            cachedMasterKey = null;
-        }
-    }
-
     private void skipHeader(ByteBuffer buffer) throws IOException {
         byte[] magic = new byte[4];
         buffer.get(magic);
@@ -210,53 +182,6 @@ public final class VaultFile {
         if (version != VaultFileFormat.VERSION) {
             throw new IOException("Unsupported version: " + version);
         }
-    }
-
-    public void save(char[] password, VaultData data) throws Exception {
-        byte[] masterKey = MasterKeyDeriver.deriveKey(password, cachedSalt);
-        try {
-            byte[] payload = objectMapper.writeValueAsBytes(data);
-            byte[] verifierPlain = VERIFIER_PLAINTEXT.getBytes(
-                StandardCharsets.UTF_8
-            );
-            SecretCipher.EncryptedData verifierEnc = SecretCipher.encrypt(
-                verifierPlain,
-                masterKey
-            );
-            SecretCipher.EncryptedData payloadEnc = SecretCipher.encrypt(
-                payload,
-                masterKey
-            );
-            writeFile(
-                cachedSalt,
-                cachedMemory,
-                cachedIterations,
-                cachedParallelism,
-                verifierEnc,
-                payloadEnc
-            );
-        } finally {
-            MemoryGuard.erase(masterKey);
-        }
-    }
-
-    public boolean verifyPassword(char[] password) {
-        try {
-            open(password);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public void exportBackup(Path backupPath) throws Exception {
-        Files.copy(filePath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    public VaultData importBackup(Path backupPath, char[] password)
-        throws Exception {
-        VaultFile backupFile = new VaultFile(backupPath);
-        return backupFile.open(password);
     }
 
     private void writeFile(
@@ -301,12 +226,5 @@ public final class VaultFile {
         buf.putInt(payloadCt.length);
         buf.put(payloadCt);
         Files.write(filePath, buf.array());
-    }
-
-    private static byte[] concat(byte[] a, byte[] b) {
-        byte[] result = new byte[a.length + b.length];
-        System.arraycopy(a, 0, result, 0, a.length);
-        System.arraycopy(b, 0, result, a.length, b.length);
-        return result;
     }
 }

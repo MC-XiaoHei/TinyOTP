@@ -3,6 +3,7 @@ package cn.xor7.xiaohei.tinyotp.crypto;
 import java.security.SecureRandom;
 
 public final class SecureRandomGenerator {
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private SecureRandomGenerator() {}
@@ -22,10 +23,6 @@ public final class SecureRandomGenerator {
     }
 
     public static byte[] generateSessionKey() {
-        return generateBytes(32);
-    }
-
-    public static byte[] generateProtectionKey() {
         return generateBytes(32);
     }
 }

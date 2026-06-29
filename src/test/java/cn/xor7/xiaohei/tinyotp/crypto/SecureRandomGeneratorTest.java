@@ -1,7 +1,8 @@
 package cn.xor7.xiaohei.tinyotp.crypto;
 
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class SecureRandomGeneratorTest {
 
@@ -29,7 +30,10 @@ class SecureRandomGeneratorTest {
         byte[] bytes = SecureRandomGenerator.generateBytes(32);
         boolean allZero = true;
         for (byte b : bytes) {
-            if (b != 0) { allZero = false; break; }
+            if (b != 0) {
+                allZero = false;
+                break;
+            }
         }
         assertFalse(allZero, "random bytes should not be all zeros");
     }
@@ -41,10 +45,12 @@ class SecureRandomGeneratorTest {
 
     @Test
     void generateSalt_should_be_random() {
-        assertFalse(java.util.Arrays.equals(
-            SecureRandomGenerator.generateSalt(),
-            SecureRandomGenerator.generateSalt()
-        ));
+        assertFalse(
+            java.util.Arrays.equals(
+                SecureRandomGenerator.generateSalt(),
+                SecureRandomGenerator.generateSalt()
+            )
+        );
     }
 
     @Test
@@ -54,20 +60,17 @@ class SecureRandomGeneratorTest {
 
     @Test
     void generateIv_should_be_random() {
-        assertFalse(java.util.Arrays.equals(
-            SecureRandomGenerator.generateIv(),
-            SecureRandomGenerator.generateIv()
-        ));
+        assertFalse(
+            java.util.Arrays.equals(
+                SecureRandomGenerator.generateIv(),
+                SecureRandomGenerator.generateIv()
+            )
+        );
     }
 
     @Test
     void generateSessionKey_should_return_32_bytes() {
         assertEquals(32, SecureRandomGenerator.generateSessionKey().length);
-    }
-
-    @Test
-    void generateProtectionKey_should_return_32_bytes() {
-        assertEquals(32, SecureRandomGenerator.generateProtectionKey().length);
     }
 
     @Test

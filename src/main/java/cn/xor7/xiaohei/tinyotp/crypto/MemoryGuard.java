@@ -26,9 +26,4 @@ public final class MemoryGuard {
         }
         return result == 0;
     }
-
-    public static void eraseThenNull(byte[] data) {
-        if (data == null) return;
-        Arrays.fill(data, (byte) 0);
-    }
 }
