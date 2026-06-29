@@ -17,13 +17,17 @@ public final class OtpAuthParser {
             throw new IllegalArgumentException("Missing type in otpauth URI");
         }
         String type = withoutScheme.substring(0, slashIndex);
-        if (!"totp".equals(type) && !"hotp".equals(type)) {
-            throw new IllegalArgumentException("Unsupported otpauth type: " + type);
+        if (!"totp".equals(type)) {
+            throw new IllegalArgumentException(
+                "Unsupported otpauth type: " + type
+            );
         }
         String pathAndQuery = withoutScheme.substring(slashIndex + 1);
         int queryIndex = pathAndQuery.indexOf('?');
         if (queryIndex == -1) {
-            throw new IllegalArgumentException("Missing query parameters in otpauth URI");
+            throw new IllegalArgumentException(
+                "Missing query parameters in otpauth URI"
+            );
         }
         String label = pathAndQuery.substring(0, queryIndex);
         String queryString = pathAndQuery.substring(queryIndex + 1);
@@ -37,10 +41,6 @@ public final class OtpAuthParser {
             account = decodeUrl(label);
         }
         String secret = null;
-        String algorithm = "SHA1";
-        int digits = 6;
-        int period = 30;
-        long counter = 0;
         String[] pairs = queryString.split("&");
         for (String pair : pairs) {
             int eqIndex = pair.indexOf('=');
@@ -56,27 +56,17 @@ public final class OtpAuthParser {
                         issuer = value;
                     }
                     break;
-                case "algorithm":
-                    algorithm = value.toUpperCase();
-                    break;
-                case "digits":
-                    digits = Integer.parseInt(value);
-                    break;
-                case "period":
-                    period = Integer.parseInt(value);
-                    break;
-                case "counter":
-                    counter = Long.parseLong(value);
-                    break;
             }
         }
         if (secret == null || secret.isEmpty()) {
             throw new IllegalArgumentException("Missing secret in otpauth URI");
         }
         if (!Base32.isValidBase32(secret)) {
-            throw new IllegalArgumentException("Invalid Base32 secret in otpauth URI");
+            throw new IllegalArgumentException(
+                "Invalid Base32 secret in otpauth URI"
+            );
         }
-        return new OtpAuthResult(type, issuer, account, secret, algorithm, digits, period, counter);
+        return new OtpAuthResult(issuer, account, secret);
     }
 
     private static String decodeUrl(String value) {
@@ -84,34 +74,27 @@ public final class OtpAuthParser {
     }
 
     public static final class OtpAuthResult {
-        private final String type;
+
         private final String issuer;
         private final String account;
         private final String secret;
-        private final String algorithm;
-        private final int digits;
-        private final int period;
-        private final long counter;
 
-        public OtpAuthResult(String type, String issuer, String account, String secret,
-                             String algorithm, int digits, int period, long counter) {
-            this.type = type;
+        public OtpAuthResult(String issuer, String account, String secret) {
             this.issuer = issuer;
             this.account = account;
             this.secret = secret;
-            this.algorithm = algorithm;
-            this.digits = digits;
-            this.period = period;
-            this.counter = counter;
         }
 
-        public String getType() { return type; }
-        public String getIssuer() { return issuer; }
-        public String getAccount() { return account; }
-        public String getSecret() { return secret; }
-        public String getAlgorithm() { return algorithm; }
-        public int getDigits() { return digits; }
-        public int getPeriod() { return period; }
-        public long getCounter() { return counter; }
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public String getAccount() {
+            return account;
+        }
+
+        public String getSecret() {
+            return secret;
+        }
     }
 }
