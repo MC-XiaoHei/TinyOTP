@@ -63,16 +63,56 @@ public final class PlatformProvider {
         }
     }
 
+    /**
+     * Re-fetch the native HWND of the main window.
+     * Call this right before JHello.verify to ensure a valid parent handle.
+     */
+    public static void refreshHwnd() {
+        String title = "TinyOTP";
+        try {
+            HWND hwnd = User32.INSTANCE.FindWindow(null, title);
+            if (hwnd != null) {
+                cachedHwnd = hwnd;
+                log.info("refreshHwnd: cached HWND for '{}' = {}", title, hwnd);
+            } else {
+                log.warn(
+                    "refreshHwnd: FindWindow returned null for '{}'",
+                    title
+                );
+            }
+        } catch (Exception e) {
+            log.warn("refreshHwnd failed", e);
+        }
+    }
+
     public static boolean verifyHello(String message) {
         if (!IS_WINDOWS) {
             log.warn("verifyHello: not Windows");
             return false;
         }
-        log.info("calling JHello.verify(\"{}\", hwnd={})", message, cachedHwnd);
+
+        // Ensure we have a valid parent HWND so the Hello dialog
+        // is correctly owned and appears in front of the main window.
+        HWND parentHwnd = cachedHwnd;
+        if (parentHwnd == null) {
+            log.warn("verifyHello: cachedHwnd is null, attempting refresh");
+            refreshHwnd();
+            parentHwnd = cachedHwnd;
+        }
+        if (parentHwnd == null) {
+            // Last resort: use the current foreground window
+            parentHwnd = User32.INSTANCE.GetForegroundWindow();
+            log.warn(
+                "verifyHello: using GetForegroundWindow as parent = {}",
+                parentHwnd
+            );
+        }
+
+        log.info("calling JHello.verify(\"{}\", hwnd={})", message, parentHwnd);
         try {
             UserConsentVerificationResult result = JHello.verify(
                 message,
-                cachedHwnd
+                parentHwnd
             );
             log.info("JHello.verify returned {}", result);
             return result == UserConsentVerificationResult.Verified;
